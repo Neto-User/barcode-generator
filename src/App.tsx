@@ -110,7 +110,7 @@ export default function App() {
     try {
       // html2canvas needs the element to be visible, but we can position it off-screen
       const canvas = await html2canvas(printRef.current, {
-        scale: 3, // Higher scale for better PDF quality (300dpi approx)
+        scale: 2, // Reduced from 3 to 2 to prevent memory issues on some devices
         useCORS: true,
         logging: false,
       });
@@ -127,9 +127,9 @@ export default function App() {
       
       pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
       pdf.save(`${title || 'etiquetas'}.pdf`);
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error generating PDF", error);
-      alert("Erro ao gerar o PDF. Tente novamente.");
+      alert(`Erro ao gerar o PDF: ${error?.message || error}`);
     } finally {
       setIsGenerating(false);
     }
@@ -369,7 +369,7 @@ export default function App() {
 
       {/* Hidden A4 Container for PDF Generation */}
       {calculated && (
-        <div style={{ position: 'absolute', zIndex: -10, opacity: 0, pointerEvents: 'none', left: 0, top: 0 }}>
+        <div style={{ position: 'absolute', top: '-10000px', left: '-10000px' }}>
           <div 
             ref={printRef} 
             style={{ 
