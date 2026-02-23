@@ -1,0 +1,5 @@
+{
+  "name": "Gerador de Folha de Códigos de Barras",
+  "description": "Gere e exporte folhas A4 com etiquetas de código de barras prontas para impressão.",
+  "requestFramePermissions": []
+}
