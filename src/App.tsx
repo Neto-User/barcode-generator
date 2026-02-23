@@ -27,7 +27,7 @@ const BarcodeItem: React.FC<{ value: string, widthCm?: number, heightCm?: number
 
   const containerStyle = isPreview 
     ? { width: '100%', height: '100%', padding: '2px' }
-    : { width: `${widthCm}cm`, height: `${heightCm}cm`, padding: '2mm', boxSizing: 'border-box' as const };
+    : { width: `${widthCm}cm`, height: `${heightCm}cm`, padding: '2mm', boxSizing: 'border-box' as const, backgroundColor: '#ffffff' };
 
   return (
     <div 
@@ -41,9 +41,9 @@ const BarcodeItem: React.FC<{ value: string, widthCm?: number, heightCm?: number
       className={isPreview ? "border border-dashed border-neutral-200" : ""}
     >
       {value ? (
-        <img ref={imgRef} style={{ maxWidth: '100%', maxHeight: '100%', objectFit: 'contain' }} alt={value} />
+        <img ref={imgRef} style={{ maxWidth: '100%', maxHeight: '100%', objectFit: 'contain', backgroundColor: '#ffffff' }} alt={value} />
       ) : (
-        <span className="text-gray-300 text-[10px]">Vazio</span>
+        <span style={{ color: '#d1d5db', fontSize: '10px' }}>Vazio</span>
       )}
     </div>
   );
@@ -375,14 +375,14 @@ export default function App() {
             style={{ 
               width: '210mm', 
               height: '297mm', 
-              backgroundColor: 'white', 
+              backgroundColor: '#ffffff', 
               padding: '10mm', 
               boxSizing: 'border-box',
               display: 'flex',
               flexDirection: 'column'
             }}
           >
-            <h1 style={{ height: '15mm', textAlign: 'center', fontSize: '18pt', fontWeight: 'bold', color: '#000', margin: 0, paddingBottom: '5mm', boxSizing: 'border-box' }}>
+            <h1 style={{ height: '15mm', textAlign: 'center', fontSize: '18pt', fontWeight: 'bold', color: '#000000', margin: 0, paddingBottom: '5mm', boxSizing: 'border-box' }}>
               {title}
             </h1>
             
@@ -394,6 +394,7 @@ export default function App() {
                 justifyContent: 'center',
                 alignContent: 'start',
                 gap: '0',
+                backgroundColor: '#ffffff',
               }}
             >
               {Array(grid.total).fill(0).map((_, idx) => {
