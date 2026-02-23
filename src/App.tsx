@@ -1,6 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { jsPDF } from 'jspdf';
-import html2canvas from 'html2canvas';
 import JsBarcode from 'jsbarcode';
 import { FileText, Settings, Grid, Download, RefreshCw, Type, Layout } from 'lucide-react';
 
@@ -63,7 +62,6 @@ export default function App() {
   const [genMethod, setGenMethod] = useState<"manual" | "random">("manual");
 
   const [isGenerating, setIsGenerating] = useState(false);
-  const printRef = useRef<HTMLDivElement>(null);
 
   const calculateSpace = () => {
     // A4 Dimensions in cm
@@ -104,28 +102,92 @@ export default function App() {
   };
 
   const downloadPDF = async () => {
-    if (!printRef.current) return;
     setIsGenerating(true);
     
+    // Small delay to allow UI to update to "Gerando PDF..."
+    await new Promise(resolve => setTimeout(resolve, 50));
+    
     try {
-      // html2canvas needs the element to be visible, but we can position it off-screen
-      const canvas = await html2canvas(printRef.current, {
-        scale: 2, // Reduced from 3 to 2 to prevent memory issues on some devices
-        useCORS: true,
-        logging: false,
-      });
-      
-      const imgData = canvas.toDataURL('image/png');
       const pdf = new jsPDF({
         orientation: 'portrait',
         unit: 'mm',
         format: 'a4'
       });
       
-      const pdfWidth = pdf.internal.pageSize.getWidth();
-      const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
+      const margin = 10; // 10mm
+      const titleHeight = title ? 15 : 0; // 15mm if title exists
+      const startY = margin + titleHeight;
+      const startX = margin;
       
-      pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
+      if (title) {
+        pdf.setFont("helvetica", "bold");
+        pdf.setFontSize(18);
+        pdf.setTextColor(0, 0, 0);
+        pdf.text(title, 105, margin + 8, { align: 'center' });
+      }
+      
+      const widthMm = width * 10;
+      const heightMm = height * 10;
+      
+      const usableWidth = 210 - (margin * 2);
+      const gridTotalWidth = grid.cols * widthMm;
+      const offsetX = startX + (usableWidth - gridTotalWidth) / 2;
+      
+      for (let i = 0; i < grid.total; i++) {
+        const codeValue = mode === 'identical' ? identicalCode : individualCodes[i];
+        if (!codeValue) continue;
+        
+        const row = Math.floor(i / grid.cols);
+        const col = i % grid.cols;
+        
+        const x = offsetX + (col * widthMm);
+        const y = startY + (row * heightMm);
+        
+        // Draw dashed border
+        pdf.setDrawColor(200, 200, 200);
+        pdf.setLineDashPattern([1, 1], 0);
+        pdf.rect(x, y, widthMm, heightMm);
+        pdf.setLineDashPattern([], 0); // reset
+        
+        try {
+          const canvas = document.createElement('canvas');
+          JsBarcode(canvas, codeValue, {
+            format: 'CODE128',
+            displayValue: true,
+            margin: 10,
+            width: 2,
+            height: 40,
+            fontSize: 16,
+            lineColor: '#000000',
+            background: '#ffffff'
+          });
+          
+          const imgData = canvas.toDataURL('image/png');
+          const padding = 2; // 2mm padding
+          const cellWidth = widthMm - (padding * 2);
+          const cellHeight = heightMm - (padding * 2);
+          
+          const imgRatio = canvas.width / canvas.height;
+          const cellRatio = cellWidth / cellHeight;
+          
+          let finalWidth = cellWidth;
+          let finalHeight = cellHeight;
+          
+          if (imgRatio > cellRatio) {
+            finalHeight = cellWidth / imgRatio;
+          } else {
+            finalWidth = cellHeight * imgRatio;
+          }
+          
+          const imgX = x + padding + (cellWidth - finalWidth) / 2;
+          const imgY = y + padding + (cellHeight - finalHeight) / 2;
+          
+          pdf.addImage(imgData, 'PNG', imgX, imgY, finalWidth, finalHeight);
+        } catch (err) {
+          console.warn(`Failed to generate barcode for ${codeValue}`, err);
+        }
+      }
+      
       pdf.save(`${title || 'etiquetas'}.pdf`);
     } catch (error: any) {
       console.error("Error generating PDF", error);
@@ -367,51 +429,6 @@ export default function App() {
         </div>
       </div>
 
-      {/* Hidden A4 Container for PDF Generation */}
-      {calculated && (
-        <div style={{ position: 'absolute', top: '-10000px', left: '-10000px' }}>
-          <div 
-            ref={printRef} 
-            style={{ 
-              width: '210mm', 
-              height: '297mm', 
-              backgroundColor: '#ffffff', 
-              padding: '10mm', 
-              boxSizing: 'border-box',
-              display: 'flex',
-              flexDirection: 'column'
-            }}
-          >
-            <h1 style={{ height: '15mm', textAlign: 'center', fontSize: '18pt', fontWeight: 'bold', color: '#000000', margin: 0, paddingBottom: '5mm', boxSizing: 'border-box' }}>
-              {title}
-            </h1>
-            
-            <div 
-              style={{
-                display: 'grid',
-                gridTemplateColumns: `repeat(${grid.cols}, ${width}cm)`,
-                gridTemplateRows: `repeat(${grid.rows}, ${height}cm)`,
-                justifyContent: 'center',
-                alignContent: 'start',
-                gap: '0',
-                backgroundColor: '#ffffff',
-              }}
-            >
-              {Array(grid.total).fill(0).map((_, idx) => {
-                const codeValue = mode === 'identical' ? identicalCode : individualCodes[idx];
-                return (
-                  <BarcodeItem 
-                    key={idx} 
-                    value={codeValue} 
-                    widthCm={width} 
-                    heightCm={height} 
-                  />
-                );
-              })}
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 }
