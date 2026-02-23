@@ -369,7 +369,7 @@ export default function App() {
 
       {/* Hidden A4 Container for PDF Generation */}
       {calculated && (
-        <div style={{ position: 'absolute', top: '-9999px', left: '-9999px' }}>
+        <div style={{ position: 'absolute', zIndex: -10, opacity: 0, pointerEvents: 'none', left: 0, top: 0 }}>
           <div 
             ref={printRef} 
             style={{ 
